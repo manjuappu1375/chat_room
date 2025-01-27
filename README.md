@@ -28,7 +28,7 @@ A real-time chatroom web application built using Java 17, Spring Boot, WebSocket
 
 1. **Clone the Repository**:
    ```sh
-   git clone https://github.com/Sushmaa123/Chat_Room.git
+   git clone https://github.com/manjuappu1375/chat_room.git
    cd ChatRoom
    ```
 
