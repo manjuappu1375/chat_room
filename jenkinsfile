@@ -5,7 +5,7 @@ def COLOR_MAP = [
 pipeline {
     agent any
      environment {
-        SCANNER_HOME = tool 'sonar-scanner'
+        SCANNER_HOME = tool 'sonarqube'
         IMAGE_NAME = "manjuappu1375/chat_room" // Name of the image created in Jenkins
         CONTAINER_NAME = "chat_room" // Name of the container created in Jenkins
      }
