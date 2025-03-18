@@ -4,7 +4,7 @@ pipeline {
         maven 'mvn' 
     }
     environment {
-        SCANNER_HOME = tool 'sonarqube'
+        SCANNER_HOME = tool 'sonar-scanner'
         NVD_API_KEY = credentials('nvd-api-key')
         IMAGE_NAME = "manjuappu1375/chat_room" 
         CONTAINER_NAME = "chat_room" 
@@ -28,8 +28,8 @@ pipeline {
         }
         stage("Sonarqube Analysis") {
             steps {
-                withSonarQubeEnv('sonarqube_server') {
-                    sh ''' $SCANNER_HOME/bin/sonarqube -Dsonar.projectName=chat_room \
+                withSonarQubeEnv('sonar-server') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=chat_room \
                     -Dsonar.projectKey=chat_room'''
                 }
             }
