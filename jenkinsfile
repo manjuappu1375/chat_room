@@ -1,60 +1,51 @@
-def COLOR_MAP = [
-    'SUCCESS': 'good',
-    'FAILURE': 'danger'
-    ]
-pipeline {
+pipeline{
     agent any
-     environment {
-        SCANNER_HOME = tool 'sonarqube'
+    tools{
+        nodejs 'node16'
+    }
+    environment {
+        SCANNER_HOME=tool 'sonarqube'
+        NVD_API_KEY = credentials('nvd-api-key')
         IMAGE_NAME = "manjuappu1375/chat_room" // Name of the image created in Jenkins
         CONTAINER_NAME = "chat_room" // Name of the container created in Jenkins
-     }
+    }
     stages {
-        stage('clean worspace') {
-        steps {
-           cleanWs()
-           }
-        }
-        stage('git checkout') {
-            steps {
-             git 'https://github.com/manjuappu1375/chat_room.git'
+        stage('clean workspace'){
+            steps{
+                cleanWs()
             }
         }
-         stage('compile') {
-            steps {
-              sh 'mvn compile'
+        stage('Checkout from Git'){
+            steps{
+                git ''
             }
         }
-         stage('code analysis') {
-            steps {
-              withSonarQubeEnv('sonar-server') {
-               sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=chat_room \
-               -Dsonar.java.binaries=. \
-               -Dsonar.projectKey=chat_room'''
-              }
+        stage("Sonarqube Analysis "){
+            steps{
+                withSonarQubeEnv('') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName="chat_room" \
+                    -Dsonar.projectKey=chat_room'''
+                }
             }
         }
-         stage('OWASP FS SCAN') {
-            steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+       
+        stage('OWASP FS SCAN') {
+             steps {
+             withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+            dependencyCheck additionalArguments: "--scan ./ --disableYarnAudit --disableNodeAudit --nvdApiKey ${NVD_API_KEY}", odcInstallation: 'DP-Check'
+             }
+            dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
-        }
+       }
+
         stage('TRIVY FS SCAN') {
             steps {
-                sh 'trivy fs .'
-            }
-        }
-
-        stage('package') {
-            steps {
-              sh 'mvn install'
+                sh "trivy fs . > trivyfs.txt"     
             }
         }
         stage('Clean Up Docker Resources') {
             steps {
                 script {
-                    // Remove the specific container
                     sh '''
                     if docker ps -a --format '{{.Names}}' | grep -q $CONTAINER_NAME; then
                         echo "Stopping and removing container: $CONTAINER_NAME"
@@ -65,7 +56,6 @@ pipeline {
                     fi
                     '''
 
-                    // Remove the specific image
                     sh '''
                     if docker images -q $IMAGE_NAME; then
                         echo "Removing image: $IMAGE_NAME"
@@ -77,8 +67,7 @@ pipeline {
                 }
             }
         }
-
-         stage('docker build') {
+      stage('docker build') {
             steps {
              script {
                     sh 'docker build -t $IMAGE_NAME .'
@@ -109,16 +98,15 @@ pipeline {
               }
             }
         }
-
-    }	
- 
-    post {
-        always {
-            echo 'slack Notification.'
-            slackSend channel: '#cicdpro',
-            color: COLOR_MAP [currentBuild.currentResult],
-            message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URl}"
-            
+post {
+     always {
+        emailext attachLog: true,
+            subject: "'${currentBuild.result}'",
+            body: "Project: ${env.JOB_NAME}<br/>" +
+                "Build Number: ${env.BUILD_NUMBER}<br/>" +
+                "URL: ${env.BUILD_URL}<br/>",
+            to: 'manjuappu1375@gmail.com',                               
+            attachmentsPattern: 'trivyfs.txt,trivyimage.txt'
         }
     }
 }
