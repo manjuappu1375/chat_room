@@ -1,8 +1,5 @@
 pipeline{
     agent any
-    tools{
-        nodejs 'node16'
-    }
     environment {
         SCANNER_HOME=tool 'sonarqube'
         NVD_API_KEY = credentials('nvd-api-key')
