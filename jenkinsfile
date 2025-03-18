@@ -6,7 +6,7 @@ pipeline {
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
         NVD_API_KEY = credentials('nvd-api-key')
-        IMAGE_NAME = "manjuappu1375/chat_room" 
+        IMAGE_NAME = "manjuappu1375/chat_room:0.1v" 
         CONTAINER_NAME = "chat_room" 
     }
     stages {
